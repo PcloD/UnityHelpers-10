@@ -6,7 +6,9 @@ public class TargettingSource : MonoBehaviour
 {
     #region TargettingFields
 
+    public int TargettingMouseButton = 0;
     public Transform TargettingSourceTransform = null; //null means myself
+
     protected Targetable m_OwnTarget = null;
     protected float m_TargetDistance = 0.0f;
     protected Vector3 m_TargettingOffset = new Vector3();
@@ -109,13 +111,13 @@ public class TargettingSource : MonoBehaviour
     void HandleTargettingLogic()
     {
         // Template method design pattern
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(TargettingMouseButton))
             LookForTarget();
 
         if (HasTarget())
             UpdateTarget();
 
-        if (Input.GetMouseButtonUp(0))
+        if (Input.GetMouseButtonUp(TargettingMouseButton))
             ReleaseTarget();
     }
 
