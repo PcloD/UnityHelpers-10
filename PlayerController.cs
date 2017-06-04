@@ -26,6 +26,12 @@ public class PlayerController : MonoBehaviour
         SetupRotation();
     }
 
+    void UpdateCursorLock()
+    {
+        if (Input.GetMouseButtonDown(0))
+            Cursor.lockState = CursorLockMode.Locked;
+    }
+
     void MoveForward()
     {
         if (transform.position.y > YPositionTreshold)
@@ -89,6 +95,9 @@ public class PlayerController : MonoBehaviour
 
     void RotateCamera()
     {
+        if (Cursor.lockState != CursorLockMode.Locked)
+            return;
+
         if (null == PlayerCamera)
             return;
 
@@ -104,6 +113,8 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        UpdateCursorLock();
+
         MoveForward();
         ApplyFriction();
         Jump();
