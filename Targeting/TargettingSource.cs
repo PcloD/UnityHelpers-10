@@ -8,6 +8,7 @@ public class TargettingSource : MonoBehaviour
 
     public int TargettingMouseButton = 0;
     public Transform TargettingSourceTransform = null; //null means myself
+    public float MaxTargettingDistance = 4.0f;
 
     protected Targetable m_OwnTarget = null;
     protected float m_TargetDistance = 0.0f;
@@ -25,6 +26,9 @@ public class TargettingSource : MonoBehaviour
 
         RaycastHit hitInfo;
         if (!Physics.Raycast(source.position, source.forward, out hitInfo))
+            return;
+
+        if (hitInfo.distance > MaxTargettingDistance)
             return;
 
         var newTarget = hitInfo.collider.gameObject.GetComponent<Targetable>();
