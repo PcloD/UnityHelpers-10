@@ -18,8 +18,8 @@ public class Draggable : Targetable
         var sourceTransform = source.GetTargettingSource();
 
         var destPosition = sourceTransform.position + sourceTransform.forward * source.GetTargettingDistance();
-        var destLocalPosition = transform.position + source.GetTargettingOffset();
-        var deltaDistance = destPosition - destLocalPosition;
+        var currentPosition = transform.position;
+        var deltaPosition = destPosition - currentPosition;
 
         var targetRotation = source.GetTargettingRotation();
         var targetRotationOffset = source.GetSourceCurrentRotation() * Quaternion.Inverse(source.GetSourceRotation());
@@ -30,7 +30,7 @@ public class Draggable : Targetable
         var rigidbody = GetComponent<Rigidbody>();
         if (null != rigidbody)
         {
-            rigidbody.velocity = DragForce * deltaDistance;
+            rigidbody.velocity = DragForce * deltaPosition;
 
             rigidbody.MoveRotation(destRotation);
             rigidbody.angularVelocity = new Vector3();
