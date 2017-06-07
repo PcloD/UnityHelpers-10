@@ -36,6 +36,16 @@ public class Targetable : MonoBehaviour
         // nothign
     }
 
+    protected virtual void InitializeTargetting()
+    {
+        // nothing
+    }
+
+    void Start()
+    {
+        InitializeTargetting();
+    }
+
     #endregion //TargettingLogic
 
     #region Accessors

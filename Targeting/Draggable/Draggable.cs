@@ -7,7 +7,7 @@ public class Draggable : Targetable
     #region TargettingLogic
 
     public float DragForce = 10.0f;
-    public float AngularForce = 0.1f;
+    public float AngularRotationFactor = 15.0f;
 
     public override void UpdateTargetting()
     {
@@ -16,20 +16,22 @@ public class Draggable : Targetable
 
         var source = GetTargettingSource();
         var sourceTransform = source.GetTargettingSource();
-      
+
         var destPosition = sourceTransform.position + sourceTransform.forward * source.GetTargettingDistance();
         var destLocalPosition = transform.position + source.GetTargettingOffset();
         var deltaDistance = destPosition - destLocalPosition;
 
-        var targetRotation = NormalizeAnglesVector(source.GetTargettingRotation());
-        var currentRotation = NormalizeAnglesVector(transform.eulerAngles);
-        var deltaRotation = NormalizeAnglesVector(targetRotation - currentRotation);
+        var targetRotation = source.GetTargettingRotation();
+        var currentRotation = transform.rotation;
+        var destRotation = Quaternion.Slerp(currentRotation, targetRotation, AngularRotationFactor * Time.deltaTime);
 
         var rigidbody = GetComponent<Rigidbody>();
-        if(null != rigidbody)
+        if (null != rigidbody)
         {
             rigidbody.velocity = DragForce * deltaDistance;
-            rigidbody.angularVelocity = Mathf.Deg2Rad * AngularForce * deltaRotation;
+
+            rigidbody.MoveRotation(destRotation);
+            rigidbody.angularVelocity = new Vector3();
         }
     }
 
