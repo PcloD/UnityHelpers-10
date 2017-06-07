@@ -22,7 +22,9 @@ public class Draggable : Targetable
         var deltaDistance = destPosition - destLocalPosition;
 
         var targetRotation = source.GetTargettingRotation();
+        var targetRotationOffset = source.GetSourceCurrentRotation() * Quaternion.Inverse(source.GetSourceRotation());
         var currentRotation = transform.rotation;
+        targetRotation.eulerAngles = targetRotation.eulerAngles + targetRotationOffset.eulerAngles;
         var destRotation = Quaternion.Slerp(currentRotation, targetRotation, AngularRotationFactor * Time.deltaTime);
 
         var rigidbody = GetComponent<Rigidbody>();

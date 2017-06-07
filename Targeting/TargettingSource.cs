@@ -14,6 +14,7 @@ public class TargettingSource : MonoBehaviour
     protected float m_TargetDistance = 0.0f;
     protected Vector3 m_TargettingOffset = new Vector3();
     protected Quaternion m_TargetRotation;
+    protected Quaternion m_SourceRotation;
 
     #endregion //TargettingFields
 
@@ -79,6 +80,7 @@ public class TargettingSource : MonoBehaviour
         m_TargetDistance = targettingInfo.distance;
         m_TargettingOffset = targettingInfo.point - target.transform.position;
         m_TargetRotation = target.gameObject.transform.rotation;
+        m_SourceRotation = GetTargettingSource().rotation;
 
         target.AttachToTargettingSource(this);
     }
@@ -113,6 +115,16 @@ public class TargettingSource : MonoBehaviour
     public virtual Quaternion GetTargettingRotation()
     {
         return m_TargetRotation;
+    }
+
+    public virtual Quaternion GetSourceRotation()
+    {
+        return m_SourceRotation;
+    }
+
+    public virtual Quaternion GetSourceCurrentRotation()
+    {
+        return GetTargettingSource().rotation;
     }
 
     #endregion //Accessors
