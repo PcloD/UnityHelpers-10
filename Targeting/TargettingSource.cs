@@ -15,6 +15,10 @@ public class TargettingSource : MonoBehaviour
     protected Quaternion m_TargetRotation;
     protected Quaternion m_SourceRotation;
 
+    public Joint SourcePhysicsHandle;
+    public GameObject TargettingHandleTemplate;
+    protected GameObject m_TargettingHandle;
+
     #endregion //TargettingFields
 
     #region TargettingTemplateMethod
@@ -65,6 +69,13 @@ public class TargettingSource : MonoBehaviour
 
         m_OwnTarget.DetachFromTargettingSource();
         m_OwnTarget = null;
+
+        if (null != SourcePhysicsHandle)
+            SourcePhysicsHandle.connectedBody = null;
+
+        if (null != m_TargettingHandle)
+            Destroy(m_TargettingHandle);
+        m_TargettingHandle = null;
     }
 
     protected virtual void AttachTarget(Targetable target, RaycastHit targettingInfo)
@@ -82,6 +93,14 @@ public class TargettingSource : MonoBehaviour
         m_TargetRotation = target.gameObject.transform.rotation;
         m_SourceRotation = sourceTransform.rotation;
 
+        m_TargettingHandle = (GameObject)Instantiate(TargettingHandleTemplate);
+        m_TargettingHandle.transform.position = target.transform.position;
+        m_TargettingHandle.transform.rotation = target.transform.rotation;
+
+        Rigidbody handleRB = m_TargettingHandle.GetComponent<Rigidbody>();
+        if(null != handleRB && null != SourcePhysicsHandle)
+            SourcePhysicsHandle.connectedBody = handleRB;
+
         target.AttachToTargettingSource(this);
     }
 
@@ -95,6 +114,11 @@ public class TargettingSource : MonoBehaviour
             return TargettingSourceTransform;
 
         return transform;
+    }
+
+    public virtual GameObject GetTargettingHandle()
+    {
+        return m_TargettingHandle;
     }
 
     public virtual Targetable GetTarget()
