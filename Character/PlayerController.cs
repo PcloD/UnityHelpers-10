@@ -8,22 +8,16 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     /* Movement */
-    public float ForwardSpeed = 15.0f;
-    public float MaxForwardSpeedChange = 10.0f;
+    public float ForwardForce = 15.0f;
+    public float MaxForwardSpeed = 10.0f;
 
+    public float ConstantFriction = 2.0f;
     public float JumpForce = 5.0f;
     public float JumpStopperTime = 0.1f;
     public float JumpVelocityTreshold = 0.01f;
     protected float m_JumpTimer = 0.0f;
     /* Rotation */
     public Camera PlayerCamera;
-
-    void SetupMovement()
-    {
-        var rigidbody = GetComponent<Rigidbody>();
-        rigidbody.freezeRotation = true;
-        rigidbody.useGravity = false;
-    }
 
     void SetupRotation()
     {
@@ -32,7 +26,6 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
-        SetupMovement();
         SetupRotation();
     }
 
@@ -74,24 +67,30 @@ public class PlayerController : MonoBehaviour
 
         if (!IsTouchingGround())
             return;
-        
-        Vector3 targetVelocity = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
-        targetVelocity = transform.TransformDirection(targetVelocity);
-        targetVelocity *= ForwardSpeed;
 
-        // Apply a force that attempts to reach our target velocity
-        Vector3 velocity = rigidbody.velocity;
-        Vector3 velocityChange = (targetVelocity - velocity);
-        velocityChange.x = Mathf.Clamp(velocityChange.x, -MaxForwardSpeedChange, MaxForwardSpeedChange);
-        velocityChange.z = Mathf.Clamp(velocityChange.z, -MaxForwardSpeedChange, MaxForwardSpeedChange);
-        velocityChange.y = 0;
+        Vector3 playerForce = new Vector3();
 
+        if (Input.GetKey(KeyCode.W))
+            playerForce += Vector3.forward * ForwardForce;
+        if (Input.GetKey(KeyCode.S))
+            playerForce -= Vector3.forward * ForwardForce;
+        if (Input.GetKey(KeyCode.A))
+            playerForce += Vector3.left * ForwardForce;
+        if (Input.GetKey(KeyCode.D))
+            playerForce -= Vector3.left * ForwardForce;
 
         Transform forwardTransform = transform;
         if (null != PlayerCamera && null != PlayerCamera.transform)
             forwardTransform = PlayerCamera.transform;
 
-        rigidbody.AddForce(forwardTransform.rotation * velocityChange, ForceMode.VelocityChange);
+        // Rotate to camera
+        playerForce = forwardTransform.rotation * playerForce;
+        // Ground force
+        var forceLength = playerForce.magnitude;
+        playerForce.y = 0.0f;
+        playerForce = playerForce.normalized * forceLength;
+
+        rigidbody.AddForce(playerForce);
 
         var v = rigidbody.velocity;
         v.y = 0.0f;
@@ -100,6 +99,19 @@ public class PlayerController : MonoBehaviour
             v = v.normalized * MaxForwardSpeed;
             rigidbody.velocity = new Vector3(v.x, rigidbody.velocity.y, v.z);
         }
+        
+    }
+
+    void ApplyFriction()
+    {
+        var rigidbody = GetComponent<Rigidbody>();
+
+        if (!IsTouchingGround())
+            return;
+
+        var v = rigidbody.velocity;
+        v.y = 0.0f;
+        rigidbody.AddForce(-v * ConstantFriction);
     }
 
     void Jump()
@@ -138,6 +150,7 @@ public class PlayerController : MonoBehaviour
         UpdateJumpingTest();
 
         MoveForward();
+        ApplyFriction();
         Jump();
         RotateCamera();
     }
