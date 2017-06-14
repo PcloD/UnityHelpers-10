@@ -12,12 +12,17 @@ public class PlayerController : MonoBehaviour
     public float MaxForwardSpeed = 10.0f;
 
     public float ConstantFriction = 2.0f;
+
+    /* Jumping */
     public float JumpForce = 5.0f;
     public float JumpStopperTime = 0.1f;
     public float JumpVelocityTreshold = 0.01f;
     protected float m_JumpTimer = 0.0f;
+    
     /* Rotation */
     public Camera PlayerCamera;
+
+    #region Setup
 
     void SetupRotation()
     {
@@ -28,6 +33,10 @@ public class PlayerController : MonoBehaviour
     {
         SetupRotation();
     }
+
+    #endregion //Setup
+
+    #region Utilities
 
     void UpdateCursorLock()
     {
@@ -60,6 +69,10 @@ public class PlayerController : MonoBehaviour
 
         return true;
     }
+
+    #endregion //Utilities
+
+    #region Movement
 
     void MoveForward()
     {
@@ -114,6 +127,10 @@ public class PlayerController : MonoBehaviour
         rigidbody.AddForce(-v * ConstantFriction);
     }
 
+    #endregion //Movement
+
+    #region Jumping
+
     void Jump()
     {
         if (!IsTouchingGround())
@@ -125,6 +142,10 @@ public class PlayerController : MonoBehaviour
         var rigidbody = GetComponent<Rigidbody>();
         rigidbody.AddForce(transform.up * JumpForce, ForceMode.Impulse);
     }
+
+    #endregion //Jumping
+
+    #region Rotation
 
     void RotateCamera()
     {
@@ -142,6 +163,8 @@ public class PlayerController : MonoBehaviour
         // Stop rb rotation
         GetComponent<Rigidbody>().angularVelocity = new Vector3();
     }
+
+    #endregion //Rotation
 
     void Update()
     {
