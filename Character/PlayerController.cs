@@ -2,19 +2,28 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(Collider))]
+
 public class PlayerController : MonoBehaviour
 {
     /* Movement */
-    public float ForwardForce = 15.0f;
-    public float MaxForwardSpeed = 10.0f;
-
-    public float ConstantFriction = 2.0f;
-    public float YPositionTreshold = 1.05f;
+    public float ForwardSpeed = 15.0f;
+    public float MaxForwardSpeedChange = 10.0f;
 
     public float JumpForce = 5.0f;
-
+    public float JumpStopperTime = 0.1f;
+    public float JumpVelocityTreshold = 0.01f;
+    protected float m_JumpTimer = 0.0f;
     /* Rotation */
     public Camera PlayerCamera;
+
+    void SetupMovement()
+    {
+        var rigidbody = GetComponent<Rigidbody>();
+        rigidbody.freezeRotation = true;
+        rigidbody.useGravity = false;
+    }
 
     void SetupRotation()
     {
@@ -23,6 +32,7 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
+        SetupMovement();
         SetupRotation();
     }
 
@@ -31,66 +41,77 @@ public class PlayerController : MonoBehaviour
         if (Input.GetMouseButtonDown(0))
             Cursor.lockState = CursorLockMode.Locked;
     }
+    
+    void UpdateJumpingTest()
+    {
+        var rigidbody = GetComponent<Rigidbody>();
+
+        if (Mathf.Abs(rigidbody.velocity.y) > JumpVelocityTreshold)
+            m_JumpTimer = JumpStopperTime;
+        else
+            m_JumpTimer -= Time.deltaTime;
+
+        if (m_JumpTimer < 0.0f)
+            m_JumpTimer = 0.0f;
+    }
+
+    bool IsTouchingGround()
+    {
+        var rb = GetComponent<Rigidbody>();
+
+        if (Mathf.Abs(rb.velocity.y) > JumpVelocityTreshold)
+            return false;
+
+        if (m_JumpTimer > 0.0f)
+            return false;
+
+        return true;
+    }
 
     void MoveForward()
     {
-        if (transform.position.y > YPositionTreshold)
+        var rigidbody = GetComponent<Rigidbody>();
+
+        if (!IsTouchingGround())
             return;
+        
+        Vector3 targetVelocity = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
+        targetVelocity = transform.TransformDirection(targetVelocity);
+        targetVelocity *= ForwardSpeed;
 
-        Vector3 playerForce = new Vector3();
+        // Apply a force that attempts to reach our target velocity
+        Vector3 velocity = rigidbody.velocity;
+        Vector3 velocityChange = (targetVelocity - velocity);
+        velocityChange.x = Mathf.Clamp(velocityChange.x, -MaxForwardSpeedChange, MaxForwardSpeedChange);
+        velocityChange.z = Mathf.Clamp(velocityChange.z, -MaxForwardSpeedChange, MaxForwardSpeedChange);
+        velocityChange.y = 0;
 
-        if (Input.GetKey(KeyCode.W))
-            playerForce += Vector3.forward * ForwardForce;
-        if (Input.GetKey(KeyCode.S))
-            playerForce -= Vector3.forward * ForwardForce;
-        if (Input.GetKey(KeyCode.A))
-            playerForce += Vector3.left * ForwardForce;
-        if (Input.GetKey(KeyCode.D))
-            playerForce -= Vector3.left * ForwardForce;
 
-        var rb = GetComponent<Rigidbody>();
-        if (null != rb)
-        {
-            Transform forwardTransform = transform;
-            if (null != PlayerCamera && null != PlayerCamera.transform)
-                forwardTransform = PlayerCamera.transform;
+        Transform forwardTransform = transform;
+        if (null != PlayerCamera && null != PlayerCamera.transform)
+            forwardTransform = PlayerCamera.transform;
 
-            rb.AddForce(forwardTransform.rotation * playerForce);
+        rigidbody.AddForce(forwardTransform.rotation * velocityChange, ForceMode.VelocityChange);
 
-            var v = rb.velocity;
-            v.y = 0.0f;
-            if (v.magnitude > MaxForwardSpeed)
-            {
-                v = v.normalized * MaxForwardSpeed;
-                rb.velocity = new Vector3(v.x, rb.velocity.y, v.z);
-            }
-        }
-    }
-
-    void ApplyFriction()
-    {
-        var rb = GetComponent<Rigidbody>();
-        if (null == rb)
-            return;
-
-        if (transform.position.y > YPositionTreshold)
-            return;
-
-        var v = rb.velocity;
+        var v = rigidbody.velocity;
         v.y = 0.0f;
-        rb.AddForce(-v * ConstantFriction);
+        if (v.magnitude > MaxForwardSpeed)
+        {
+            v = v.normalized * MaxForwardSpeed;
+            rigidbody.velocity = new Vector3(v.x, rigidbody.velocity.y, v.z);
+        }
     }
 
     void Jump()
     {
+        if (!IsTouchingGround())
+            return;
+
         if (!Input.GetKeyDown(KeyCode.Space))
             return;
 
-        var rb = GetComponent<Rigidbody>();
-        if (null == rb)
-            return;
-
-        rb.AddForce(transform.up * JumpForce, ForceMode.Impulse);
+        var rigidbody = GetComponent<Rigidbody>();
+        rigidbody.AddForce(transform.up * JumpForce, ForceMode.Impulse);
     }
 
     void RotateCamera()
@@ -107,16 +128,16 @@ public class PlayerController : MonoBehaviour
         PlayerCamera.transform.LookAt(PlayerCamera.transform.position + PlayerCamera.transform.forward, Vector3.up);
 
         // Stop rb rotation
-        if (null != GetComponent<Rigidbody>())
-            GetComponent<Rigidbody>().angularVelocity = new Vector3();
+        GetComponent<Rigidbody>().angularVelocity = new Vector3();
     }
 
     void Update()
     {
         UpdateCursorLock();
 
+        UpdateJumpingTest();
+
         MoveForward();
-        ApplyFriction();
         Jump();
         RotateCamera();
     }
