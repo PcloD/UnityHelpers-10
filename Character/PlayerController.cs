@@ -84,13 +84,16 @@ public class PlayerController : MonoBehaviour
         Vector3 playerForce = new Vector3();
 
         if (Input.GetKey(KeyCode.W))
-            playerForce += Vector3.forward * ForwardForce;
+            playerForce += Vector3.forward;
         if (Input.GetKey(KeyCode.S))
-            playerForce -= Vector3.forward * ForwardForce;
+            playerForce -= Vector3.forward;
         if (Input.GetKey(KeyCode.A))
-            playerForce += Vector3.left * ForwardForce;
+            playerForce += Vector3.left;
         if (Input.GetKey(KeyCode.D))
-            playerForce -= Vector3.left * ForwardForce;
+            playerForce -= Vector3.left;
+
+        if (playerForce.sqrMagnitude > 0.0f)
+            playerForce = playerForce.normalized * ForwardForce;
 
         Transform forwardTransform = transform;
         if (null != PlayerCamera && null != PlayerCamera.transform)
