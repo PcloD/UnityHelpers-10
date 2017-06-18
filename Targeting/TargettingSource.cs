@@ -4,6 +4,17 @@ using UnityEngine;
 
 public class TargettingSource : MonoBehaviour
 {
+    #region InputExpropriation
+
+    protected InputExpropriation m_MouseButtonsInputExpropriation;
+
+    protected void SetupInputExpropriations()
+    {
+        m_MouseButtonsInputExpropriation = InputExpropriator.CreateInputExpropriation(InputExpropriator.InputType.MouseButtons, 0);
+    }
+
+    #endregion //InputExpropriation
+
     #region TargettingFields
 
     public int TargettingMouseButton = 0;
@@ -150,8 +161,16 @@ public class TargettingSource : MonoBehaviour
 
     #region Logic
 
+    void Start()
+    {
+        SetupInputExpropriations();
+    }
+
     void HandleTargettingLogic()
     {
+        if (!m_MouseButtonsInputExpropriation.IsActive())
+            return;
+
         // Template method design pattern
         if (Input.GetMouseButtonDown(TargettingMouseButton))
             LookForTarget();
@@ -163,9 +182,14 @@ public class TargettingSource : MonoBehaviour
             ReleaseTarget();
     }
 
-    void Update()
+    protected virtual void TargettingUpdate()
     {
         HandleTargettingLogic();
+    }
+
+    void Update()
+    {
+        TargettingUpdate();
     }
 
     #endregion //Logic

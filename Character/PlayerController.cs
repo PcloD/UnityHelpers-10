@@ -31,6 +31,7 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
+        SetupInputExpropriations();
         SetupRotation();
     }
 
@@ -79,6 +80,9 @@ public class PlayerController : MonoBehaviour
         var rigidbody = GetComponent<Rigidbody>();
 
         if (!IsTouchingGround())
+            return;
+
+        if (!m_MovementKeysInputExpropriation.IsActive())
             return;
 
         Vector3 playerForce = new Vector3();
@@ -139,6 +143,9 @@ public class PlayerController : MonoBehaviour
         if (!IsTouchingGround())
             return;
 
+        if (!m_JumpKeysInputExpropriation.IsActive())
+            return;
+
         if (!Input.GetKeyDown(KeyCode.Space))
             return;
 
@@ -158,6 +165,9 @@ public class PlayerController : MonoBehaviour
         if (null == PlayerCamera)
             return;
 
+        if (!m_MouseMovementInputExpropriation.IsActive())
+            return;
+
         // From the marvelous internet
         Vector3 mouseOffset = new Vector3(-Input.GetAxis("Mouse Y"), Input.GetAxis("Mouse X"), 0f);
         PlayerCamera.transform.Rotate(mouseOffset, Space.Self);
@@ -168,6 +178,21 @@ public class PlayerController : MonoBehaviour
     }
 
     #endregion //Rotation
+
+    #region InputExpropriator
+
+    protected InputExpropriation m_MouseMovementInputExpropriation;
+    protected InputExpropriation m_MovementKeysInputExpropriation;
+    protected InputExpropriation m_JumpKeysInputExpropriation;
+
+    protected void SetupInputExpropriations()
+    {
+        m_MouseMovementInputExpropriation = InputExpropriator.CreateInputExpropriation(InputExpropriator.InputType.MouseMovement, 0);
+        m_MovementKeysInputExpropriation  = InputExpropriator.CreateInputExpropriation(InputExpropriator.InputType.MovementKeys, 0);
+        m_JumpKeysInputExpropriation      = InputExpropriator.CreateInputExpropriation(InputExpropriator.InputType.JumpKeys, 0);
+    }
+
+    #endregion //InputExpropriator
 
     void Update()
     {
