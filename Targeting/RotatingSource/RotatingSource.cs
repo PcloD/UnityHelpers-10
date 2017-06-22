@@ -15,12 +15,15 @@ public class RotatingSource : TargettingSource
 
     protected InputExpropriation m_InputExpropriation = null;
 
+    protected Vector3 m_TargetOffset;
+
     protected void AssumeInputClaimed()
     {
-        if (null != m_InputExpropriation)
+        if (null != m_InputExpropriation || null == m_TargettingHandle)
             return;
 
         m_InputExpropriation = InputExpropriator.CreateInputExpropriation(InputExpropriator.InputType.MouseMovement, InputExpropriationLevel);
+        m_TargetOffset = m_TargettingHandle.transform.position - transform.position;
     }
 
     protected void AssumeInputReleased()
@@ -52,7 +55,7 @@ public class RotatingSource : TargettingSource
 
     #region Logic
 
-    protected void RotateTargetMarkerAccordingToMouseMovement()
+    protected void HandleRotation()
     {
         if (null == m_InputExpropriation || null == m_TargettingHandle)
             return;
@@ -65,6 +68,7 @@ public class RotatingSource : TargettingSource
 
         SourcePhysicsHandle.connectedBody = null;
         m_TargettingHandle.transform.Rotate(mouseOffset, Space.Self);
+        m_TargettingHandle.transform.position = transform.position + m_TargetOffset;
         SourcePhysicsHandle.connectedBody = handleRB;
     }
 
@@ -75,12 +79,16 @@ public class RotatingSource : TargettingSource
         if (IsRotatingActive())
         {
             AssumeInputClaimed();
-            RotateTargetMarkerAccordingToMouseMovement();
+            HandleRotation();
         }
-        else
-        {
+    }
+
+    protected override void TargettingUpdate()
+    {
+        base.TargettingUpdate();
+
+        if (!IsRotatingActive())
             AssumeInputReleased();
-        }
     }
 
     #endregion //Logic
