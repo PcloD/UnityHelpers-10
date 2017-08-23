@@ -6,7 +6,7 @@ public class InputController : MonoBehaviour
 {
     #region Properties
 
-    public float ScreenSpaceDragTreshold = 5.0f;
+    public float ScreenSpaceDragTreshold = 10.0f;
 
     #endregion //Properties
 
@@ -37,15 +37,17 @@ public class InputController : MonoBehaviour
         }
     }
 
-    public static InputReactor GetInputObject()
+    public static List<InputReactor> GetInputObjects()
     {
         const int MAX_OBJECTS_TO_CHECK = 10;
 
         if (!IsPressed())
             return null;
 
+        List<InputReactor> result = new List<InputReactor>();
+
         var inputPos = GetInputPosition();
-        var worldPos = Camera.main.ScreenToWorldPoint(new Vector3(inputPos.x, inputPos.y, Camera.main.nearClipPlane));
+        var worldPos = Utilities.ScreenToWorldPos(inputPos);
         RaycastHit2D[] raycastResult = new RaycastHit2D[MAX_OBJECTS_TO_CHECK];
 
         var foundObjectsCount = Physics2D.Raycast(worldPos, Camera.main.transform.forward, new ContactFilter2D(), raycastResult);
@@ -58,11 +60,10 @@ public class InputController : MonoBehaviour
             if (null == inputReactor)
                 continue;
 
-            //TODO:SZ handle multiple input reactors and choose by layer. Maybe sprite layer? 
-            return inputReactor;
+            result.Add(inputReactor);
         }
         
-        return null;
+        return result;
     }
 
     #endregion //InputWrapper
@@ -126,21 +127,36 @@ public class InputController : MonoBehaviour
         DragEnd
     }
 
-    protected InputReactor m_InputEventObject;
+    protected List<InputReactor> m_InputEventObjects;
     protected Vector2 m_InputEventStartPosition;
     protected EInputEventState m_InputEventState;
+
+    public List<InputReactor> GetInputEventObjects()
+    {
+        return m_InputEventObjects;
+    }
+
+    public Vector2 GetInputEventStartPos()
+    {
+        return m_InputEventStartPosition;
+    }
+
+    public EInputEventState GetInputEventState()
+    {
+        return m_InputEventState;
+    }
 
     protected void UpdateEvents()
     {
         switch(m_InputEventState)
         {
             case EInputEventState.NoInput:
-                Utilities.Assert(null == m_InputEventObject);
+                Utilities.Assert(null == m_InputEventObjects);
 
                 if(m_InputState == EInputState.JustPressed || m_InputState == EInputState.Pressed)
                 {
-                    m_InputEventObject = GetInputObject();
-                    if (null == m_InputEventObject)
+                    m_InputEventObjects = GetInputObjects();
+                    if (null == m_InputEventObjects)
                         break;
 
                     m_InputEventStartPosition = GetInputPosition();
@@ -148,7 +164,7 @@ public class InputController : MonoBehaviour
                 }
                 break;
             case EInputEventState.TapStart:
-                Utilities.Assert(null != m_InputEventObject);
+                Utilities.Assert(null != m_InputEventObjects);
 
                 var currentPos = GetInputPosition();
                 var distance = (currentPos - m_InputEventStartPosition).magnitude;
@@ -166,40 +182,45 @@ public class InputController : MonoBehaviour
 
                 break;
             case EInputEventState.TapCancel:
+                Utilities.Assert(null != m_InputEventObjects);
                 m_InputEventState = EInputEventState.DragStart;
                 break;
             case EInputEventState.TapEnd:
+                Utilities.Assert(null != m_InputEventObjects);
                 m_InputEventState = EInputEventState.NoInput;
-                m_InputEventObject = null;
+                m_InputEventObjects = null;
                 break;
             case EInputEventState.DragStart:
+                Utilities.Assert(null != m_InputEventObjects);
                 m_InputEventState = EInputEventState.DragUpdate;
                 break;
             case EInputEventState.DragUpdate:
-                if(m_InputState == EInputState.JustReleased || m_InputState == EInputState.Released)
+                Utilities.Assert(null != m_InputEventObjects);
+
+                if (m_InputState == EInputState.JustReleased || m_InputState == EInputState.Released)
                 {
                     m_InputEventState = EInputEventState.DragEnd;
                     break;
                 }
+
                 break;
             case EInputEventState.DragEnd:
+                Utilities.Assert(null != m_InputEventObjects);
                 m_InputEventState = EInputEventState.NoInput;
-                m_InputEventObject = null;
+                m_InputEventObjects = null;
                 break;
         }
 
-        if (null != m_InputEventObject)
-            m_InputEventObject.UpdateEventState(m_InputEventState);
+        if (null != m_InputEventObjects)
+        {
+            foreach(var inputEventObject in m_InputEventObjects)
+                inputEventObject.UpdateEventState(this, m_InputEventState);
+        }
     }
 
     #endregion //EventsHandling
 
     #region Signals
-
-    private void Start()
-    {
-
-    }
 
     private void Update()
     {

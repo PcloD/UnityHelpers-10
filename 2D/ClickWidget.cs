@@ -8,29 +8,41 @@ using UnityEngine.Events;
 
 public class ClickWidget : MonoBehaviour
 {
-    public UnityEvent OnClick;
+    #region Signals
 
     void Start()
+    {
+        RegisterInputEvents();
+    }
+
+    #endregion //Signals
+
+    #region EventsHandling
+
+    protected virtual void RegisterInputEvents()
     {
         GetComponent<InputReactor>().RegisterEvent(InputController.EInputEventState.TapStart, OnTapStart);
         GetComponent<InputReactor>().RegisterEvent(InputController.EInputEventState.TapCancel, OnTapCancel);
         GetComponent<InputReactor>().RegisterEvent(InputController.EInputEventState.TapEnd, OnTapEnd);
     }
 
-    void OnTapStart()
+    public UnityEvent OnClick;
+
+    protected virtual void OnTapStart(InputController inputController)
     {
         Debug.Log("Start");
     }
 
-    void OnTapCancel()
+    protected virtual void OnTapCancel(InputController inputController)
     {
         Debug.Log("Cancel");
     }
 
-    void OnTapEnd()
+    protected virtual void OnTapEnd(InputController inputController)
     {
         Debug.Log("End");
         OnClick.Invoke();
     }
 
+    #endregion //EventsHandling
 }

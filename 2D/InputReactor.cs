@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class InputReactor : MonoBehaviour
 {
-    public delegate void InputReactorEvent();
+    public delegate void InputReactorEvent(InputController inputController);
 
     protected Dictionary<InputController.EInputEventState, InputReactorEvent> m_OnStateChangedEvents;
     protected InputController.EInputEventState m_PreviousState = InputController.EInputEventState.NoInput;
@@ -19,7 +19,7 @@ public class InputReactor : MonoBehaviour
             m_OnStateChangedEvents.Add(state, null);
     }
 
-    public virtual void UpdateEventState(InputController.EInputEventState inputEventState)
+    public virtual void UpdateEventState(InputController inputController, InputController.EInputEventState inputEventState)
     {
         if (inputEventState == m_PreviousState && inputEventState != InputController.EInputEventState.DragUpdate)
             return;
@@ -27,7 +27,7 @@ public class InputReactor : MonoBehaviour
         m_PreviousState = inputEventState;
 
         if (null != m_OnStateChangedEvents[inputEventState])
-            m_OnStateChangedEvents[inputEventState].Invoke();
+            m_OnStateChangedEvents[inputEventState].Invoke(inputController);
     }
 
     public virtual void RegisterEvent(InputController.EInputEventState inputEventState, InputReactorEvent callback)
