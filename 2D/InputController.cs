@@ -1,4 +1,7 @@
-﻿using System.Collections;
+﻿
+//#define LOG_INPUT_DEBUG
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -50,10 +53,13 @@ public class InputController : MonoBehaviour
         var worldPos = Utilities.ScreenToWorldPos(inputPos);
         RaycastHit2D[] raycastResult = new RaycastHit2D[MAX_OBJECTS_TO_CHECK];
 
-        var foundObjectsCount = Physics2D.Raycast(worldPos, Camera.main.transform.forward, new ContactFilter2D(), raycastResult);
+        ContactFilter2D raycastFilter = new ContactFilter2D();
+        raycastFilter.useTriggers = true;
+
+        var foundObjectsCount = Physics2D.Raycast(worldPos, Camera.main.transform.forward, raycastFilter, raycastResult);
         for(int i = 0; i < foundObjectsCount; ++i)
         {
-            if (raycastResult[i].collider == null)
+            if (null == raycastResult[i].collider)
                 continue;
 
             var inputReactor = raycastResult[i].collider.gameObject.GetComponent<InputReactor>();
@@ -62,7 +68,14 @@ public class InputController : MonoBehaviour
 
             result.Add(inputReactor);
         }
-        
+
+#if (LOG_INPUT_DEBUG)
+        Debug.Log("[GetInputObjects] Found " + result.Count + " objects:");
+        foreach (var obj in result)
+            if (null != obj)
+                Debug.Log(Utilities.GetNameAbsolute(obj.transform));
+#endif
+
         return result;
     }
 
@@ -84,6 +97,10 @@ public class InputController : MonoBehaviour
     {
         var isPressed = IsPressed();
 
+#if (LOG_INPUT_DEBUG)
+        var previousState = m_InputState;
+#endif
+         
         switch (m_InputState)
         {
             case EInputState.Released:
@@ -101,6 +118,12 @@ public class InputController : MonoBehaviour
                 m_InputState = EInputState.Released;
                 break;
         }
+
+#if (LOG_INPUT_DEBUG)
+        if(m_InputState != previousState)
+            Debug.Log("[InputState] InputState changed from: " + previousState + " to " + m_InputState);
+#endif
+
     }
 
     #endregion //InputHandling
@@ -161,6 +184,14 @@ public class InputController : MonoBehaviour
 
                     m_InputEventStartPosition = GetInputPosition();
                     m_InputEventState = EInputEventState.TapStart;
+
+#if (LOG_INPUT_DEBUG)
+                    Debug.Log("[Event] EventState NoInput -> TapStart for objects:");
+                    foreach (var obj in m_InputEventObjects)
+                        if (null != obj)
+                            Debug.Log(Utilities.GetNameAbsolute(obj.transform));
+#endif
+
                 }
                 break;
             case EInputEventState.TapStart:
@@ -171,12 +202,28 @@ public class InputController : MonoBehaviour
                 if(distance > ScreenSpaceDragTreshold)
                 {
                     m_InputEventState = EInputEventState.TapCancel; // start drag. Machine state can cancel a tap only by starting a drag
+
+#if (LOG_INPUT_DEBUG)
+                    Debug.Log("[Event] EventState TapStart -> TapCancel for objects:");
+                    foreach (var obj in m_InputEventObjects)
+                        if (null != obj)
+                            Debug.Log(Utilities.GetNameAbsolute(obj.transform));
+#endif
+
                     break;
                 }
 
                 if(m_InputState == EInputState.JustReleased || m_InputState == EInputState.Released)
                 {
                     m_InputEventState = EInputEventState.TapEnd;
+
+#if (LOG_INPUT_DEBUG)
+                    Debug.Log("[Event] EventState TapStart -> TapEnd for objects:");
+                    foreach (var obj in m_InputEventObjects)
+                        if (null != obj)
+                            Debug.Log(Utilities.GetNameAbsolute(obj.transform));
+#endif
+
                     break;
                 }
 
@@ -184,15 +231,39 @@ public class InputController : MonoBehaviour
             case EInputEventState.TapCancel:
                 Utilities.Assert(null != m_InputEventObjects);
                 m_InputEventState = EInputEventState.DragStart;
+
+#if (LOG_INPUT_DEBUG)
+                Debug.Log("[Event] EventState TapCancel -> DragStart for objects:");
+                foreach (var obj in m_InputEventObjects)
+                    if (null != obj)
+                        Debug.Log(Utilities.GetNameAbsolute(obj.transform));
+#endif
+
                 break;
             case EInputEventState.TapEnd:
                 Utilities.Assert(null != m_InputEventObjects);
                 m_InputEventState = EInputEventState.NoInput;
+
+#if (LOG_INPUT_DEBUG)
+                Debug.Log("[Event] EventState TapEnd -> NoInput for objects:");
+                foreach (var obj in m_InputEventObjects)
+                    if (null != obj)
+                        Debug.Log(Utilities.GetNameAbsolute(obj.transform));
+#endif
+
                 m_InputEventObjects = null;
                 break;
             case EInputEventState.DragStart:
                 Utilities.Assert(null != m_InputEventObjects);
                 m_InputEventState = EInputEventState.DragUpdate;
+
+#if (LOG_INPUT_DEBUG)
+                Debug.Log("[Event] EventState DragStart -> DragUpdate for objects:");
+                foreach (var obj in m_InputEventObjects)
+                    if (null != obj)
+                        Debug.Log(Utilities.GetNameAbsolute(obj.transform));
+#endif
+
                 break;
             case EInputEventState.DragUpdate:
                 Utilities.Assert(null != m_InputEventObjects);
@@ -200,6 +271,14 @@ public class InputController : MonoBehaviour
                 if (m_InputState == EInputState.JustReleased || m_InputState == EInputState.Released)
                 {
                     m_InputEventState = EInputEventState.DragEnd;
+
+#if (LOG_INPUT_DEBUG)
+                    Debug.Log("[Event] EventState DragUpdate -> DragEnd for objects:");
+                    foreach (var obj in m_InputEventObjects)
+                        if (null != obj)
+                            Debug.Log(Utilities.GetNameAbsolute(obj.transform));
+#endif
+
                     break;
                 }
 
@@ -207,6 +286,14 @@ public class InputController : MonoBehaviour
             case EInputEventState.DragEnd:
                 Utilities.Assert(null != m_InputEventObjects);
                 m_InputEventState = EInputEventState.NoInput;
+
+#if (LOG_INPUT_DEBUG)
+                Debug.Log("[Event] EventState DragEnd -> NoInput for objects:");
+                foreach (var obj in m_InputEventObjects)
+                    if(null != obj)
+                        Debug.Log(Utilities.GetNameAbsolute(obj.transform));
+#endif
+
                 m_InputEventObjects = null;
                 break;
         }
@@ -214,7 +301,8 @@ public class InputController : MonoBehaviour
         if (null != m_InputEventObjects)
         {
             foreach(var inputEventObject in m_InputEventObjects)
-                inputEventObject.UpdateEventState(this, m_InputEventState);
+                if(null != inputEventObject)
+                    inputEventObject.UpdateEventState(this, m_InputEventState);
         }
     }
 
